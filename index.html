@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Live — Parlez-vous le langage des RS ? | Videonline.info</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,700;0,800;1,300;1,400&family=Oswald:wght@700&display=swap" rel="stylesheet">
+  <!-- SDK Firebase (App + Realtime Database) via HTTPS standard -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --noir: #212121;
+      --blanc: #FFFFFF;
+      --gris-fonce: #504f4c;
+      --beige-bordure: #dbd6c6;
+      --beige-fond: #f4f2ec;
+      --accent-vert: #47e26e;
+      --accent-bleu: #478ce2;
+      --accent-violet: #756b96;
+      --accent-erreur: #ea5153;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--beige-fond);
+      color: var(--noir);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 16px;
+      font-weight: 400;
+    }
+
+    .brand-bar {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 0 4px;
+    }
+
+    .brand-logo {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 1.55rem;
+      letter-spacing: 0.01em;
+      color: var(--noir);
+      text-decoration: none;
+    }
+
+    .brand-tag {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--gris-fonce);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      background: var(--blanc);
+      border: 1px solid var(--beige-bordure);
+      border-top: 5px solid var(--accent-violet);
+      border-radius: 14px;
+      padding: 32px 28px;
+      box-shadow: 0 10px 30px rgba(33, 33, 33, 0.06);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--gris-fonce);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: var(--beige-fond);
+      color: var(--noir);
+      border: 1px solid var(--beige-bordure);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-violet);
+      display: inline-block;
+    }
+
+    h1 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      color: var(--noir);
+    }
+
+    .subtitle {
+      color: var(--gris-fonce);
+      font-weight: 400;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      font-size: 0.96rem;
+    }
+
+    .primary-btn {
+      margin-top: 16px;
+      width: 100%;
+      padding: 15px 20px;
+      background: var(--accent-violet);
+      color: var(--blanc);
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    .primary-btn:hover:not(:disabled) { opacity: 0.92; }
+    .primary-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .secondary-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--beige-fond);
+      color: var(--noir);
+      font-weight: 700;
+      font-size: 0.96rem;
+      border: 1.5px solid var(--beige-bordure);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .secondary-btn:hover { background: var(--beige-bordure); }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .role-card {
+      padding: 22px 18px;
+      border: 1.5px solid var(--beige-bordure);
+      border-radius: 12px;
+      background: var(--blanc);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .role-card:hover {
+      background: var(--beige-fond);
+      border-color: var(--accent-violet);
+    }
+
+    .role-card h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--noir);
+    }
+
+    .role-card p {
+      font-size: 0.88rem;
+      color: var(--gris-fonce);
+      line-height: 1.45;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--noir);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1.5px solid var(--beige-bordure);
+      border-radius: 10px;
+      font-size: 1rem;
+      color: var(--noir);
+      background: var(--blanc);
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--accent-violet);
+    }
+
+    .code-input {
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    .slot-btn {
+      padding: 12px 0;
+      border: 1.5px solid var(--beige-bordure);
+      border-radius: 10px;
+      background: var(--beige-fond);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--noir);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .slot-btn:hover:not(:disabled) { border-color: var(--accent-violet); }
+    .slot-btn.selected {
+      background: var(--accent-violet);
+      border-color: var(--accent-violet);
+      color: var(--blanc);
+    }
+
+    .room-banner {
+      background: var(--beige-fond);
+      border: 1.5px dashed var(--beige-bordure);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .room-code-display {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--noir);
+      margin: 4px 0;
+    }
+
+    .conn-status {
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin: 6px 0 8px 0;
+      color: var(--gris-fonce);
+    }
+
+    .conn-status.ok { color: #1e8e3e; }
+    .conn-status.err { color: var(--accent-erreur); }
+
+    .copy-link-btn {
+      margin-top: 6px;
+      padding: 8px 14px;
+      background: var(--blanc);
+      border: 1px solid var(--beige-bordure);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--noir);
+      cursor: pointer;
+    }
+
+    .copy-link-btn:hover { background: var(--beige-bordure); }
+
+    .players-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .player-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border: 1px solid var(--beige-bordure);
+      border-radius: 10px;
+      background: var(--beige-fond);
+      font-size: 0.92rem;
+    }
+
+    .player-pill.empty {
+      opacity: 0.45;
+      background: var(--blanc);
+    }
+
+    .player-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: var(--accent-violet);
+      color: var(--blanc);
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .player-pill.empty .player-num {
+      background: var(--beige-bordure);
+      color: var(--gris-fonce);
+    }
+
+    .timer-wrapper { margin-bottom: 22px; }
+
+    .timer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gris-fonce);
+    }
+
+    .timer-seconds {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--noir);
+    }
+
+    .timer-seconds.urgent { color: var(--accent-erreur); }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: var(--beige-fond);
+      border: 1px solid var(--beige-bordure);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-violet);
+      width: 100%;
+      transition: width 0.25s linear, background-color 0.25s ease;
+    }
+
+    .progress-fill.urgent { background: var(--accent-erreur); }
+
+    .question-text {
+      font-size: 1.2rem;
+      font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 20px;
+      color: var(--noir);
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .option-btn {
+      background: var(--blanc);
+      border: 1.5px solid var(--beige-bordure);
+      color: var(--gris-fonce);
+      padding: 14px 16px;
+      border-radius: 10px;
+      text-align: left;
+      font-size: 0.96rem;
+      font-weight: 400;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      background: var(--beige-fond);
+      border-color: var(--accent-violet);
+      color: var(--noir);
+    }
+
+    .option-btn:disabled { cursor: default; }
+
+    .option-btn.chosen {
+      border-color: var(--accent-bleu);
+      background: rgba(71, 140, 226, 0.1);
+      color: var(--noir);
+    }
+
+    .option-btn.chosen .option-letter {
+      background: var(--accent-bleu);
+      border-color: var(--accent-bleu);
+      color: var(--blanc);
+    }
+
+    .option-letter {
+      background: var(--beige-fond);
+      color: var(--noir);
+      border: 1px solid var(--beige-bordure);
+      font-weight: 700;
+      min-width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.88rem;
+      flex-shrink: 0;
+    }
+
+    .option-btn.correct {
+      border-color: var(--accent-vert);
+      background: rgba(71, 226, 110, 0.15);
+      color: var(--noir);
+    }
+
+    .option-btn.correct .option-letter {
+      background: var(--accent-vert);
+      border-color: var(--accent-vert);
+      color: var(--noir);
+    }
+
+    .option-btn.wrong {
+      border-color: var(--accent-erreur);
+      background: rgba(234, 81, 83, 0.1);
+      color: var(--noir);
+    }
+
+    .option-btn.wrong .option-letter {
+      background: var(--accent-erreur);
+      border-color: var(--accent-erreur);
+      color: var(--blanc);
+    }
+
+    .feedback {
+      margin-top: 20px;
+      padding: 15px 18px;
+      border-radius: 10px;
+      background: var(--beige-fond);
+      border: 1px solid var(--beige-bordure);
+      border-left: 4px solid var(--accent-violet);
+      font-size: 0.93rem;
+      line-height: 1.5;
+      color: var(--gris-fonce);
+    }
+
+    .feedback-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: var(--noir);
+      margin-bottom: 4px;
+    }
+
+    .status-pill {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .scoreboard {
+      margin-top: 20px;
+      border: 1px solid var(--beige-bordure);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .scoreboard-title {
+      background: var(--beige-fond);
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gris-fonce);
+      border-bottom: 1px solid var(--beige-bordure);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--beige-bordure);
+      background: var(--blanc);
+      font-size: 0.95rem;
+    }
+
+    .score-row:last-child { border-bottom: none; }
+    .score-row.leader { background: rgba(71, 226, 110, 0.12); }
+
+    .score-player-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: var(--noir);
+    }
+
+    .round-delta {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 8px;
+    }
+
+    .round-delta.plus { background: rgba(71, 226, 110, 0.25); color: var(--noir); }
+    .round-delta.zero { background: var(--beige-fond); color: var(--gris-fonce); }
+
+    .score-points {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--noir);
+    }
+
+    .winner-box {
+      text-align: center;
+      background: var(--beige-fond);
+      border: 2px solid var(--accent-vert);
+      border-radius: 14px;
+      padding: 24px 18px;
+      margin: 18px 0 22px 0;
+    }
+
+    .winner-crown {
+      display: inline-block;
+      background: var(--accent-vert);
+      color: var(--noir);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .winner-name {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--noir);
+      margin-bottom: 4px;
+    }
+
+    .winner-score {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gris-fonce);
+    }
+
+    .error-msg {
+      color: var(--accent-erreur);
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .status-info {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--gris-fonce);
+      margin-top: 14px;
+      font-weight: 700;
+    }
+
+    .hidden { display: none !important; }
+
+    .footer-credit {
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid var(--beige-bordure);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--gris-fonce);
+    }
+
+    .footer-credit a { color: var(--noir); font-weight: 700; }
+
+    @media (max-width: 560px) {
+      .role-grid, .players-list { grid-template-columns: 1fr; }
+      .container { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="brand-bar">
+    <a href="https://videonline.info" target="_blank" rel="noopener" class="brand-logo">Videonline.info</a>
+    <span class="brand-tag">Quiz Live • 6 Joueurs</span>
+  </div>
+
+  <div class="container">
+    <!-- ÉCRAN 1 : CHOIX DU RÔLE -->
+    <div id="screen-role">
+      <div class="header">
+        <span class="badge"><span class="badge-dot"></span>Culture Réseaux Sociaux</span>
+        <span>10 Questions • 30s</span>
+      </div>
+      <h1>Parlez-vous le langage des réseaux sociaux ?</h1>
+      <p class="subtitle">
+        Affrontez-vous en temps réel sur le vocabulaire et les formats des réseaux sociaux (10 questions tirées au sort). L'animateur crée la salle et jusqu'à 6 participants rejoignent depuis leur smartphone.
+      </p>
+      <div class="role-grid">
+        <button type="button" class="role-card" onclick="initHost()">
+          <span class="badge" style="width:fit-content;"><span class="badge-dot"></span>Écran principal</span>
+          <h2>Créer une partie (Animateur)</h2>
+          <p>Génère un code de salle, affiche les inscrits (1 à 6) et pilote le lancement des 10 questions.</p>
+        </button>
+        <button type="button" class="role-card" onclick="showJoinScreen()">
+          <span class="badge" style="width:fit-content;"><span class="badge-dot" style="background:var(--accent-bleu);"></span>Smartphone</span>
+          <h2>Rejoindre (Participant)</h2>
+          <p>Entrez le code de la salle, choisissez un numéro de 1 à 6 ou un pseudo et répondez en 30 s.</p>
+        </button>
+      </div>
+      <div class="footer-credit">
+        Support de formation — <a href="https://videonline.info" target="_blank" rel="noopener">Laurent Clause</a>
+      </div>
+    </div>
+
+    <!-- ÉCRAN 2A : SALON D'ATTENTE ANIMATEUR -->
+    <div id="screen-host-lobby" class="hidden">
+      <div class="header">
+        <span class="badge"><span class="badge-dot"></span>Salon Animateur</span>
+        <span id="host-count-label">0 / 6 participants</span>
+      </div>
+      <div class="room-banner">
+        <div style="font-size:0.8rem;font-weight:700;text-transform:uppercase;color:var(--gris-fonce);">Code de la salle à partager</div>
+        <div class="room-code-display" id="host-room-code">----</div>
+        <div class="conn-status" id="host-conn-status">Initialisation de la salle…</div>
+        <button type="button" class="copy-link-btn" id="copy-link-btn" onclick="copyInviteLink()">Copier le lien d'invitation directe</button>
+      </div>
+      <div class="form-label">Participants connectés (places 1 à 6)</div>
+      <div class="players-list" id="host-players-grid"></div>
+      <button type="button" class="primary-btn" id="start-game-btn" onclick="hostStartGame()" disabled>En attente d'au moins 1 participant…</button>
+      <button type="button" class="secondary-btn" onclick="location.reload()">← Annuler et revenir à l'accueil</button>
+      <div class="footer-credit">
+        Support de formation — <a href="https://videonline.info" target="_blank" rel="noopener">Laurent Clause</a>
+      </div>
+    </div>
+
+    <!-- ÉCRAN 2B : INSCRIPTION PARTICIPANT -->
+    <div id="screen-join" class="hidden">
+      <div class="header">
+        <span class="badge"><span class="badge-dot" style="background:var(--accent-bleu);"></span>Inscription</span>
+        <span>Max. 6 joueurs</span>
+      </div>
+      <h1>Rejoindre la partie</h1>
+      <div class="form-group">
+        <label class="form-label" for="join-code-input">Code de la salle (4 lettres)</label>
+        <input type="text" id="join-code-input" class="text-input code-input" maxlength="4" placeholder="EX: ABCD" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Choisissez votre numéro (1 à 6)</label>
+        <div class="slots-grid" id="slots-selector">
+          <button type="button" class="slot-btn selected" data-slot="1" onclick="selectSlot(1)">1</button>
+          <button type="button" class="slot-btn" data-slot="2" onclick="selectSlot(2)">2</button>
+          <button type="button" class="slot-btn" data-slot="3" onclick="selectSlot(3)">3</button>
+          <button type="button" class="slot-btn" data-slot="4" onclick="selectSlot(4)">4</button>
+          <button type="button" class="slot-btn" data-slot="5" onclick="selectSlot(5)">5</button>
+          <button type="button" class="slot-btn" data-slot="6" onclick="selectSlot(6)">6</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="join-pseudo-input">Votre pseudo (optionnel)</label>
+        <input type="text" id="join-pseudo-input" class="text-input" maxlength="18" placeholder="Ex: Marie (sinon « Joueur N° »)" />
+      </div>
+      <div class="error-msg" id="join-error"></div>
+      <button type="button" class="primary-btn" id="join-submit-btn" onclick="joinRoom()">Valider mon inscription</button>
+      <button type="button" class="secondary-btn" onclick="location.reload()">← Retour</button>
+    </div>
+
+    <!-- ÉCRAN 2C : SALLE D'ATTENTE PARTICIPANT -->
+    <div id="screen-player-wait" class="hidden">
+      <div class="header">
+        <span class="badge"><span class="badge-dot" style="background:var(--accent-vert);"></span>Inscrit</span>
+        <span id="wait-room-badge">Salle ----</span>
+      </div>
+      <h1 id="wait-player-title">Bienvenue !</h1>
+      <p class="subtitle">
+        Vous êtes bien connecté à la partie. Gardez cet écran ouvert : la première question démarrera dès que l'animateur lancera le quiz.
+      </p>
+      <div class="form-label">Participants dans la salle</div>
+      <div class="players-list" id="player-wait-grid"></div>
+      <div class="status-info">En attente du lancement par l'animateur…</div>
+    </div>
+
+    <!-- ÉCRAN 3 : JEU -->
+    <div id="screen-game" class="hidden">
+      <div class="header">
+        <span id="game-q-counter">Question 1 / 10</span>
+        <span class="badge" id="game-role-badge"><span class="badge-dot"></span>En direct</span>
+      </div>
+
+      <div class="timer-wrapper" id="timer-box">
+        <div class="timer-top">
+          <span id="timer-label">Temps restant pour répondre</span>
+          <span class="timer-seconds" id="timer-seconds">30 s</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="timer-bar"></div>
+        </div>
+      </div>
+
+      <div class="question-text" id="game-question-text"></div>
+      <div class="options" id="game-options-container"></div>
+
+      <div class="status-info hidden" id="player-answered-info">Réponse enregistrée ! En attente de la fin du chrono…</div>
+      <div class="status-info hidden" id="host-answers-info">0 / 0 réponses reçues</div>
+
+      <div id="reveal-section" class="hidden">
+        <div class="feedback" id="game-feedback-box"></div>
+        <div class="scoreboard">
+          <div class="scoreboard-title">
+            <span>Classement cumulé</span>
+            <span>Points</span>
+          </div>
+          <div id="round-scoreboard-rows"></div>
+        </div>
+        <button type="button" class="primary-btn hidden" id="host-next-btn" onclick="hostNextStep()">Question suivante →</button>
+      </div>
+    </div>
+
+    <!-- ÉCRAN 4 : PODIUM FINAL -->
+    <div id="screen-final" class="hidden">
+      <div class="header">
+        <span class="badge"><span class="badge-dot" style="background:var(--accent-vert);"></span>Partie terminée</span>
+        <span>10 Questions</span>
+      </div>
+      <h1 style="text-align:center;">Classement final</h1>
+      <div class="winner-box">
+        <div class="winner-crown">Vainqueur du quiz</div>
+        <div class="winner-name" id="final-winner-name">—</div>
+        <div class="winner-score" id="final-winner-score">0 point</div>
+      </div>
+      <div class="scoreboard">
+        <div class="scoreboard-title">
+          <span>Podium complet</span>
+          <span>Score final</span>
+        </div>
+        <div id="final-scoreboard-rows"></div>
+      </div>
+      <button type="button" class="primary-btn hidden" id="host-restart-btn" onclick="hostRestartGame()">Rejouer (10 nouvelles questions tirées au sort)</button>
+      <button type="button" class="secondary-btn" onclick="location.href = location.pathname">Quitter et revenir à l'accueil</button>
+      <div class="footer-credit">
+        Support de formation — <a href="https://videonline.info" target="_blank" rel="noopener">Laurent Clause</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       0. CONFIGURATION FIREBASE (REMPLACE PAR TON URL REALTIME DATABASE)
+       ========================================================================== */
+    const FIREBASE_DB_URL = "https://TON-PROJET-default-rtdb.europe-west1.firebasedatabase.app";
+
+    firebase.initializeApp({ databaseURL: FIREBASE_DB_URL });
+    const db = firebase.database();
+
+    /* ==========================================================================
+       1. BANQUE DE 16 QUESTIONS (SLIDES 9 À 12 — PARLEZ-VOUS LE LANGAGE DES RS ?)
+       ========================================================================== */
+    const ALL_16_QUESTIONS = [
+      // --- SLIDE 9 ---
+      {
+        question: "Qu'appelle-t-on le « Feed » ?",
+        options: [
+          { text: "Une vidéo en direct", isCorrect: false },
+          { text: "Une conversation privée", isCorrect: false },
+          { text: "La page qui regroupe les publications visibles lorsqu'on ouvre une application", isCorrect: true },
+          { text: "Une vidéo de 24 heures", isCorrect: false }
+        ],
+        explanation: "Le Feed (ou fil d'actualité) est la page principale sur laquelle défilent les publications des comptes suivis ou recommandés."
+      },
+      {
+        question: "Un Reel est principalement...",
+        options: [
+          { text: "Une publication texte", isCorrect: false },
+          { text: "Une vidéo verticale courte", isCorrect: true },
+          { text: "Une vidéo diffusée en direct", isCorrect: false },
+          { text: "Un album photo", isCorrect: false }
+        ],
+        explanation: "Le Reel (sur Instagram et Facebook) est un format de vidéo verticale courte conçu pour être consommé en plein écran sur mobile."
+      },
+      {
+        question: "Quelle est la principale différence entre une Story et un Reel ?",
+        options: [
+          { text: "La Story disparaît généralement après 24 heures", isCorrect: true },
+          { text: "Le Reel est réservé à Facebook", isCorrect: false },
+          { text: "La Story ne peut contenir de vidéo", isCorrect: false },
+          { text: "Le Reel est uniquement horizontal", isCorrect: false }
+        ],
+        explanation: "Contrairement au Reel qui reste publié durablement sur le profil et dans le fil, la Story est éphémère (24 h, sauf mise à la une)."
+      },
+      {
+        question: "Les Shorts sont le format vidéo court de...",
+        options: [
+          { text: "TikTok", isCorrect: false },
+          { text: "Instagram", isCorrect: false },
+          { text: "YouTube", isCorrect: true },
+          { text: "LinkedIn", isCorrect: false }
+        ],
+        explanation: "YouTube Shorts est la déclinaison verticale courte (9:16) de YouTube."
+      },
+
+      // --- SLIDE 10 ---
+      {
+        question: "Sur X (ancien Twitter), un « Thread » est...",
+        options: [
+          { text: "Une vidéo verticale", isCorrect: false },
+          { text: "Un message privé", isCorrect: false },
+          { text: "Un live vidéo", isCorrect: false },
+          { text: "Une suite de plusieurs publications reliées entre elles", isCorrect: true }
+        ],
+        explanation: "Un Thread (ou fil) permet de développer un récit ou une analyse en enchaînant plusieurs posts liés les uns aux autres."
+      },
+      {
+        question: "Le « Live Tweet » consiste à...",
+        options: [
+          { text: "Programmer un tweet", isCorrect: false },
+          { text: "Publier plusieurs messages en temps réel pendant un événement", isCorrect: true },
+          { text: "Diffuser une vidéo en direct", isCorrect: false },
+          { text: "Supprimer automatiquement un tweet", isCorrect: false }
+        ],
+        explanation: "Le Live Tweet est la couverture écrite et illustrée en direct d'un événement (conférence, procès, compétition, émission…)."
+      },
+      {
+        question: "Quel format est pensé pour être consulté rapidement, souvent en plein écran sur smartphone ?",
+        options: [
+          { text: "Les Stories", isCorrect: false },
+          { text: "Les Reels", isCorrect: false },
+          { text: "Les Shorts", isCorrect: false },
+          { text: "Toutes ces réponses", isCorrect: true }
+        ],
+        explanation: "Stories, Reels et Shorts adoptent tous le format vertical plein écran 9:16 adapté à la consultation rapide sur smartphone."
+      },
+      {
+        question: "Que signifie « UGC » ?",
+        options: [
+          { text: "Ultimate Graphic Content", isCorrect: false },
+          { text: "User Generated Content", isCorrect: true },
+          { text: "Universal Global Content", isCorrect: false },
+          { text: "User Graphic Creator", isCorrect: false }
+        ],
+        explanation: "UGC signifie « User Generated Content » (contenu généré par les utilisateurs ou témoins, comme des vidéos d'amateurs sur un événement)."
+      },
+
+      // --- SLIDE 11 ---
+      {
+        question: "Lequel de ces formats est généralement horizontal ?",
+        options: [
+          { text: "Reel", isCorrect: false },
+          { text: "Story", isCorrect: false },
+          { text: "Short", isCorrect: false },
+          { text: "Publication vidéo YouTube classique", isCorrect: true }
+        ],
+        explanation: "La vidéo YouTube classique reste au format historique 16:9 horizontal, contrairement aux Reels, Stories et Shorts."
+      },
+      {
+        question: "Le « Hook » désigne...",
+        options: [
+          { text: "Les premières secondes destinées à capter l'attention", isCorrect: true },
+          { text: "La musique de la vidéo", isCorrect: false },
+          { text: "Les sous-titres", isCorrect: false },
+          { text: "La miniature", isCorrect: false }
+        ],
+        explanation: "Le Hook (l'accroche) correspond aux tout premiers instants (visuels et sonores) qui empêchent l'internaute de passer à la vidéo suivante."
+      },
+      {
+        question: "Qu'appelle-t-on un « Carousel » ?",
+        options: [
+          { text: "Une vidéo en boucle", isCorrect: false },
+          { text: "Une publication contenant plusieurs images ou vidéos que l'on fait défiler", isCorrect: true },
+          { text: "Un direct", isCorrect: false },
+          { text: "Une publicité", isCorrect: false }
+        ],
+        explanation: "Le carrousel regroupe plusieurs diapositives (photos, infographies ou courtes vidéos) que l'on fait glisser horizontalement."
+      },
+      {
+        question: "Le CTA (Call To Action) correspond...",
+        options: [
+          { text: "À la description de la publication", isCorrect: false },
+          { text: "Au titre de la vidéo", isCorrect: false },
+          { text: "À une invitation à agir (s'abonner, commenter, partager...)", isCorrect: true },
+          { text: "À la miniature", isCorrect: false }
+        ],
+        explanation: "Un Call To Action incite explicitement l'audience à effectuer une action : commenter, partager, s'abonner ou cliquer vers un article."
+      },
+
+      // --- SLIDE 12 ---
+      {
+        question: "Quel contenu est conçu pour durer le moins longtemps ?",
+        options: [
+          { text: "Story", isCorrect: true },
+          { text: "Reel", isCorrect: false },
+          { text: "Feed", isCorrect: false },
+          { text: "Thread", isCorrect: false }
+        ],
+        explanation: "La Story s'efface automatiquement après 24 heures, tandis que les autres formats restent accessibles sur le profil."
+      },
+      {
+        question: "Que désigne un « Mashup » ?",
+        options: [
+          { text: "Une vidéo filmée en une seule prise", isCorrect: false },
+          { text: "Une vidéo créée en mélangeant plusieurs extraits", isCorrect: true },
+          { text: "Une interview", isCorrect: false },
+          { text: "Une vidéo en direct", isCorrect: false }
+        ],
+        explanation: "Un Mashup assemble ou remixe plusieurs sources ou extraits vidéo/audio distincts en une nouvelle création."
+      },
+      {
+        question: "Lequel de ces termes ne désigne PAS un format de publication ?",
+        options: [
+          { text: "Feed", isCorrect: false },
+          { text: "Story", isCorrect: false },
+          { text: "Reel", isCorrect: false },
+          { text: "Hook", isCorrect: true }
+        ],
+        explanation: "Le Hook est une technique narrative (l'accroche des premières secondes), pas un format de publication."
+      },
+      {
+        question: "Parmi ces formats, lesquels nécessitent le plus souvent un montage vertical en 9:16 ?",
+        options: [
+          { text: "Feed Facebook", isCorrect: false },
+          { text: "Reel Instagram", isCorrect: false },
+          { text: "TikTok", isCorrect: false },
+          { text: "YouTube Shorts", isCorrect: false },
+          { text: "Reel Instagram, TikTok, YouTube Shorts et Stories (tous sauf le Feed Facebook)", isCorrect: true }
+        ],
+        explanation: "Reels Instagram, TikTok, YouTube Shorts et Stories utilisent tous le ratio vertical plein écran 9:16."
+      }
+    ];
+
+    /* ==========================================================================
+       2. TIRAGE ALÉATOIRE DE 10 QUESTIONS PARMI 16 & MÉLANGE DES RÉPONSES
+       ========================================================================== */
+    const LETTERS = ["A", "B", "C", "D", "E"];
+    const QUESTIONS_PER_GAME = 10;
+    const ROUND_DURATION = 30;
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function prepareDeck() {
+      // 1. Tire au sort 10 questions parmi les 16
+      const selectedQuestions = shuffleArray(ALL_16_QUESTIONS).slice(0, QUESTIONS_PER_GAME);
+
+      // 2. Mélange les options de chaque question en évitant de répéter deux fois la même position de bonne réponse
+      let prevCorrectPos = -1;
+      return selectedQuestions.map((q) => {
+        const numChoices = q.options.length;
+        let targetPos = Math.floor(Math.random() * numChoices);
+        let guard = 0;
+        while (targetPos === prevCorrectPos && guard < 20) {
+          targetPos = Math.floor(Math.random() * numChoices);
+          guard++;
+        }
+        prevCorrectPos = targetPos;
+
+        const correctOpt = q.options.find(o => o.isCorrect);
+        const wrongOpts = shuffleArray(q.options.filter(o => !o.isCorrect));
+        const arranged = [];
+        let w = 0;
+        for (let i = 0; i < numChoices; i++) {
+          if (i === targetPos) arranged.push(correctOpt.text);
+          else arranged.push(wrongOpts[w++].text);
+        }
+
+        return {
+          question: q.question,
+          options: arranged,
+          correctIndex: targetPos,
+          explanation: q.explanation
+        };
+      });
+    }
+
+    /* ==========================================================================
+       3. ÉTAT GLOBAL SYNCHRONISÉ PAR FIREBASE
+       ========================================================================== */
+    let role = null; // 'host' ou 'player'
+    let roomCode = "";
+    let roomRef = null;
+
+    let players = {};
+    let preparedQuestions = [];
+    let currentQIndex = 0;
+    let phase = "lobby";
+    let timerInterval = null;
+    let timeLeft = ROUND_DURATION;
+    let lastRenderedPhaseKey = "";
+
+    let mySlot = 1;
+    let myName = "";
+    let mySelectedOption = null;
+
+    function showScreen(id) {
+      ["screen-role", "screen-host-lobby", "screen-join", "screen-player-wait", "screen-game", "screen-final"].forEach(s => {
+        document.getElementById(s).classList.add("hidden");
+      });
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get("room");
+      if (roomParam) {
+        showJoinScreen();
+        document.getElementById("join-code-input").value = roomParam.toUpperCase().slice(0, 4);
+      }
+    });
+
+    /* ==========================================================================
+       4. LOGIQUE ANIMATEUR (HOST)
+       ========================================================================== */
+    function generateRoomCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "";
+      for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return code;
+    }
+
+    async function initHost() {
+      role = "host";
+      roomCode = generateRoomCode();
+      document.getElementById("host-room-code").textContent = roomCode;
+      showScreen("screen-host-lobby");
+      renderPlayersGrid("host-players-grid", {});
+
+      const statusEl = document.getElementById("host-conn-status");
+      statusEl.className = "conn-status";
+      statusEl.textContent = "Création de la salle sur le serveur…";
+
+      try {
+        roomRef = db.ref("rooms/" + roomCode);
+        await roomRef.set({
+          phase: "lobby",
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
+          players: {},
+          answers: {}
+        });
+
+        statusEl.className = "conn-status ok";
+        statusEl.textContent = "Salle active (HTTPS) — 100 % compatible Wi-Fi & 4G/5G !";
+
+        roomRef.child("players").on("value", (snap) => {
+          players = snap.val() || {};
+          renderPlayersGrid("host-players-grid", players);
+          const count = Object.keys(players).length;
+          document.getElementById("host-count-label").textContent = `${count} / 6 participants`;
+
+          const startBtn = document.getElementById("start-game-btn");
+          if (count >= 1) {
+            startBtn.disabled = false;
+            startBtn.textContent = `Lancer la partie (${count} participant${count > 1 ? "s" : ""})`;
+          } else {
+            startBtn.disabled = true;
+            startBtn.textContent = "En attente d'au moins 1 participant…";
+          }
+        });
+
+        roomRef.child("answers").on("value", (snap) => {
+          if (phase !== "question") return;
+          const answers = snap.val() || {};
+          const totalPlayers = Object.keys(players).length;
+          const answeredCount = Object.keys(answers).length;
+
+          const info = document.getElementById("host-answers-info");
+          info.classList.remove("hidden");
+          info.textContent = `Réponses reçues : ${answeredCount} / ${totalPlayers}`;
+
+          if (totalPlayers > 0 && answeredCount >= totalPlayers) {
+            clearInterval(timerInterval);
+            hostRevealAnswer(answers);
+          }
+        });
+
+      } catch (err) {
+        statusEl.className = "conn-status err";
+        statusEl.textContent = "Erreur Firebase : vérifie l'URL FIREBASE_DB_URL et le mode test.";
+      }
+    }
+
+    function copyInviteLink() {
+      const url = `${location.origin}${location.pathname}?room=${roomCode}`;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById("copy-link-btn");
+        btn.textContent = "Lien copié !";
+        setTimeout(() => { btn.textContent = "Copier le lien d'invitation directe"; }, 2500);
+      });
+    }
+
+    async function hostStartGame() {
+      preparedQuestions = prepareDeck();
+      currentQIndex = 0;
+
+      const updates = {};
+      Object.keys(players).forEach(slot => {
+        updates[`players/${slot}/score`] = 0;
+        updates[`players/${slot}/lastDelta`] = 0;
+      });
+      await roomRef.update(updates);
+      hostLaunchQuestion();
+    }
+
+    async function hostLaunchQuestion() {
+      phase = "question";
+      timeLeft = ROUND_DURATION;
+      const q = preparedQuestions[currentQIndex];
+
+      const questionState = {
+        qIndex: currentQIndex,
+        total: preparedQuestions.length,
+        question: q.question,
+        options: q.options,
+        duration: ROUND_DURATION
+      };
+
+      await roomRef.update({
+        phase: "question",
+        currentQuestion: questionState,
+        answers: null,
+        reveal: null
+      });
+
+      renderQuestionScreen(questionState, true);
+      const info = document.getElementById("host-answers-info");
+      info.classList.remove("hidden");
+      info.textContent = `Réponses reçues : 0 / ${Object.keys(players).length}`;
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(async () => {
+        timeLeft--;
+        updateTimerUI(timeLeft, ROUND_DURATION);
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          const snap = await roomRef.child("answers").get();
+          hostRevealAnswer(snap.val() || {});
+        }
+      }, 1000);
+    }
+
+    async function hostRevealAnswer(answers) {
+      if (phase === "reveal") return;
+      phase = "reveal";
+      const q = preparedQuestions[currentQIndex];
+
+      const updates = {};
+      Object.keys(players).forEach(slot => {
+        const ans = answers[slot];
+        const isRight = (ans !== undefined && Number(ans) === q.correctIndex);
+        const newScore = (players[slot].score || 0) + (isRight ? 1 : 0);
+        const delta = isRight ? 1 : 0;
+
+        players[slot].score = newScore;
+        players[slot].lastDelta = delta;
+        updates[`players/${slot}/score`] = newScore;
+        updates[`players/${slot}/lastDelta`] = delta;
+      });
+
+      const standings = getRankedPlayers(players);
+      const revealPayload = {
+        correctIndex: q.correctIndex,
+        explanation: q.explanation,
+        standings
+      };
+
+      updates["phase"] = "reveal";
+      updates["reveal"] = revealPayload;
+      await roomRef.update(updates);
+
+      renderRevealUI(revealPayload, true);
+    }
+
+    async function hostNextStep() {
+      currentQIndex++;
+      if (currentQIndex < preparedQuestions.length) {
+        hostLaunchQuestion();
+      } else {
+        phase = "final";
+        const standings = getRankedPlayers(players);
+        await roomRef.update({
+          phase: "final",
+          finalStandings: standings
+        });
+        renderFinalScreen(standings, true);
+      }
+    }
+
+    function hostRestartGame() {
+      hostStartGame();
+    }
+
+    function getRankedPlayers(playersObj) {
+      return Object.values(playersObj)
+        .map(p => ({ slot: p.slot, name: p.name, score: p.score || 0, lastDelta: p.lastDelta || 0 }))
+        .sort((a, b) => b.score - a.score || a.slot - b.slot);
+    }
+
+    /* ==========================================================================
+       5. LOGIQUE PARTICIPANT (PLAYER)
+       ========================================================================== */
+    function showJoinScreen() {
+      showScreen("screen-join");
+    }
+
+    function selectSlot(num) {
+      mySlot = num;
+      document.querySelectorAll(".slot-btn").forEach(btn => {
+        btn.classList.toggle("selected", Number(btn.dataset.slot) === num);
+      });
+    }
+
+    async function joinRoom() {
+      const code = document.getElementById("join-code-input").value.trim().toUpperCase();
+      const pseudo = document.getElementById("join-pseudo-input").value.trim();
+      const errBox = document.getElementById("join-error");
+      const btn = document.getElementById("join-submit-btn");
+
+      errBox.style.display = "none";
+      if (code.length !== 4) {
+        errBox.textContent = "Veuillez saisir les 4 caractères du code de la salle.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      role = "player";
+      roomCode = code;
+      btn.disabled = true;
+      btn.textContent = "Connexion en cours…";
+
+      try {
+        roomRef = db.ref("rooms/" + roomCode);
+        const snap = await roomRef.get();
+
+        if (!snap.exists()) {
+          errBox.textContent = "Salle introuvable. Vérifiez le code affiché par l'animateur.";
+          errBox.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Valider mon inscription";
+          return;
+        }
+
+        const roomData = snap.val();
+        if (roomData.phase !== "lobby") {
+          errBox.textContent = "La partie a déjà démarré.";
+          errBox.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Valider mon inscription";
+          return;
+        }
+
+        const displayName = pseudo ? `#${mySlot} — ${pseudo}` : `Joueur ${mySlot}`;
+        const slotRef = roomRef.child("players/" + mySlot);
+
+        const tx = await slotRef.transaction((currentVal) => {
+          if (currentVal !== null) return;
+          return {
+            slot: mySlot,
+            name: displayName,
+            score: 0,
+            lastDelta: 0
+          };
+        });
+
+        if (!tx.committed) {
+          errBox.textContent = `Le numéro ${mySlot} vient d'être pris. Choisissez-en un autre.`;
+          errBox.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Valider mon inscription";
+          return;
+        }
+
+        myName = displayName;
+        document.getElementById("wait-room-badge").textContent = `Salle ${roomCode}`;
+        document.getElementById("wait-player-title").textContent = `Bienvenue, ${myName} !`;
+        showScreen("screen-player-wait");
+
+        roomRef.on("value", (roomSnap) => {
+          const state = roomSnap.val();
+          if (!state) return;
+
+          players = state.players || {};
+
+          if (state.phase === "lobby") {
+            renderPlayersGrid("player-wait-grid", players);
+          }
+
+          if (state.phase === "question" && state.currentQuestion) {
+            const key = "q_" + state.currentQuestion.qIndex;
+            if (lastRenderedPhaseKey !== key) {
+              lastRenderedPhaseKey = key;
+              mySelectedOption = null;
+              renderQuestionScreen(state.currentQuestion, false);
+              startLocalVisualTimer(state.currentQuestion.duration);
+            }
+          }
+
+          if (state.phase === "reveal" && state.reveal) {
+            const key = "rev_" + (state.currentQuestion ? state.currentQuestion.qIndex : "");
+            if (lastRenderedPhaseKey !== key) {
+              lastRenderedPhaseKey = key;
+              clearInterval(timerInterval);
+              renderRevealUI(state.reveal, false);
+            }
+          }
+
+          if (state.phase === "final" && state.finalStandings) {
+            if (lastRenderedPhaseKey !== "final") {
+              lastRenderedPhaseKey = "final";
+              clearInterval(timerInterval);
+              renderFinalScreen(state.finalStandings, false);
+            }
+          }
+        });
+
+      } catch (err) {
+        errBox.textContent = "Erreur de connexion au serveur : " + err.message;
+        errBox.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Valider mon inscription";
+      }
+    }
+
+    function startLocalVisualTimer(duration) {
+      let left = duration;
+      updateTimerUI(left, duration);
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        left--;
+        if (left < 0) left = 0;
+        updateTimerUI(left, duration);
+        if (left <= 0) clearInterval(timerInterval);
+      }, 1000);
+    }
+
+    async function playerSelectOption(index) {
+      if (role !== "player" || mySelectedOption !== null) return;
+      mySelectedOption = index;
+
+      document.querySelectorAll("#game-options-container .option-btn").forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === index) btn.classList.add("chosen");
+      });
+
+      document.getElementById("player-answered-info").classList.remove("hidden");
+      await roomRef.child("answers/" + mySlot).set(index);
+    }
+
+    /* ==========================================================================
+       6. RENDU INTERFACE COMMUN
+       ========================================================================== */
+    function renderPlayersGrid(containerId, playersObj) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      for (let i = 1; i <= 6; i++) {
+        const p = playersObj[i];
+        const div = document.createElement("div");
+        div.className = p ? "player-pill" : "player-pill empty";
+        div.innerHTML = `
+          <div style="display:flex;align-items:center;overflow:hidden;">
+            <span class="player-num">${i}</span>
+            <span style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${p ? escapeHtml(p.name) : "Place libre"}
+            </span>
+          </div>
+          <span style="font-size:0.75rem;font-weight:700;color:var(--gris-fonce);">${p ? "Prêt" : "—"}</span>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function renderQuestionScreen(data, isHost) {
+      showScreen("screen-game");
+      document.getElementById("game-q-counter").textContent = `Question ${data.qIndex + 1} / ${data.total}`;
+      document.getElementById("game-role-badge").innerHTML = isHost
+        ? `<span class="badge-dot"></span>Animateur • Salle ${roomCode}`
+        : `<span class="badge-dot" style="background:var(--accent-bleu);"></span>${escapeHtml(myName)}`;
+
+      document.getElementById("timer-label").textContent = "Temps restant pour répondre";
+      updateTimerUI(data.duration, data.duration);
+
+      document.getElementById("game-question-text").textContent = data.question;
+      document.getElementById("reveal-section").classList.add("hidden");
+      document.getElementById("player-answered-info").classList.add("hidden");
+      document.getElementById("host-answers-info").classList.add("hidden");
+
+      const optionsBox = document.getElementById("game-options-container");
+      optionsBox.innerHTML = "";
+
+      data.options.forEach((optText, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerHTML = `<span class="option-letter">${LETTERS[idx]}</span><span>${escapeHtml(optText)}</span>`;
+        if (isHost) {
+          btn.disabled = true;
+        } else {
+          btn.onclick = () => playerSelectOption(idx);
+        }
+        optionsBox.appendChild(btn);
+      });
+    }
+
+    function updateTimerUI(left, total) {
+      const secEl = document.getElementById("timer-seconds");
+      const barEl = document.getElementById("timer-bar");
+      secEl.textContent = `${left} s`;
+      barEl.style.width = `${(left / total) * 100}%`;
+
+      if (left <= 5) {
+        secEl.classList.add("urgent");
+        barEl.classList.add("urgent");
+      } else {
+        secEl.classList.remove("urgent");
+        barEl.classList.remove("urgent");
+      }
+    }
+
+    function renderRevealUI(data, isHost) {
+      document.getElementById("timer-label").textContent = "Temps écoulé !";
+      updateTimerUI(0, ROUND_DURATION);
+      document.getElementById("player-answered-info").classList.add("hidden");
+      document.getElementById("host-answers-info").classList.add("hidden");
+
+      const buttons = document.querySelectorAll("#game-options-container .option-btn");
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove("chosen");
+        if (idx === data.correctIndex) {
+          btn.classList.add("correct");
+        } else if (!isHost && mySelectedOption === idx) {
+          btn.classList.add("wrong");
+        }
+      });
+
+      const fb = document.getElementById("game-feedback-box");
+      let statusHtml = `<span class="status-pill" style="background:var(--accent-vert);"></span>Bonne réponse : ${LETTERS[data.correctIndex]}`;
+      if (!isHost) {
+        if (mySelectedOption === data.correctIndex) {
+          statusHtml = `<span class="status-pill" style="background:var(--accent-vert);"></span>Bravo ! +1 point`;
+        } else if (mySelectedOption === null) {
+          statusHtml = `<span class="status-pill" style="background:var(--accent-erreur);"></span>Temps dépassé (0 point)`;
+        } else {
+          statusHtml = `<span class="status-pill" style="background:var(--accent-erreur);"></span>Mauvaise réponse (0 point)`;
+        }
+      }
+
+      fb.style.display = "block";
+      fb.innerHTML = `<div class="feedback-header">${statusHtml}</div>${escapeHtml(data.explanation)}`;
+
+      renderScoreboardRows("round-scoreboard-rows", data.standings || [], true);
+      document.getElementById("reveal-section").classList.remove("hidden");
+
+      const nextBtn = document.getElementById("host-next-btn");
+      if (isHost) {
+        nextBtn.classList.remove("hidden");
+        nextBtn.textContent = (currentQIndex === preparedQuestions.length - 1)
+          ? "Afficher le podium final →"
+          : "Question suivante →";
+      } else {
+        nextBtn.classList.add("hidden");
+      }
+    }
+
+    function renderScoreboardRows(containerId, standings, showDelta) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      const topScore = standings.length > 0 ? standings[0].score : 0;
+
+      standings.forEach((p, idx) => {
+        const row = document.createElement("div");
+        const isLeader = p.score > 0 && p.score === topScore;
+        row.className = isLeader ? "score-row leader" : "score-row";
+
+        const deltaHtml = showDelta
+          ? `<span class="round-delta ${p.lastDelta > 0 ? "plus" : "zero"}">${p.lastDelta > 0 ? "+1 pt" : "0 pt"}</span>`
+          : "";
+
+        row.innerHTML = `
+          <div class="score-player-info">
+            <span class="player-num" style="margin-right:0;">${idx + 1}</span>
+            <span>${escapeHtml(p.name)}</span>
+            ${deltaHtml}
+          </div>
+          <div class="score-points">${p.score} pt${p.score > 1 ? "s" : ""}</div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderFinalScreen(standings, isHost) {
+      showScreen("screen-final");
+      if (standings.length > 0) {
+        const bestScore = standings[0].score;
+        const winners = standings.filter(p => p.score === bestScore);
+        const winnerTitle = winners.map(w => w.name).join(" & ");
+        document.getElementById("final-winner-name").textContent = winnerTitle;
+        document.getElementById("final-winner-score").textContent = `${bestScore} point${bestScore > 1 ? "s" : ""} sur ${QUESTIONS_PER_GAME}`;
+      }
+
+      renderScoreboardRows("final-scoreboard-rows", standings, false);
+
+      const restartBtn = document.getElementById("host-restart-btn");
+      if (isHost) restartBtn.classList.remove("hidden");
+      else restartBtn.classList.add("hidden");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
